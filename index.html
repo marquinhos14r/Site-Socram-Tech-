@@ -1,0 +1,1027 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Socram Tech</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+/* Layout: bancada de laboratório. Cabeçalho fixo, seções em coluna única com painel de resultado lateral (sticky) nos fluxos de simulação. */
+:root{
+  --bg:#EFF3F2; --surface:#FFFFFF; --surface-2:#E4EBE9; --fg:#0F1E1D; --muted:#46595A; --line:#C7D3D0;
+  --accent:#0A6B5C; --accent-fg:#FFFFFF; --accent-soft:#D3EBE5;
+  --warn:#8F5200; --warn-soft:#FBE9C8; --bad:#A3261F; --bad-soft:#F8DAD7; --good:#1B6F38; --good-soft:#D6EEDC;
+  --ph-body:#2B3A39; --ph-screen:#8FB8B0; --ph-scratch:#E9F2F0;
+  --f-display:'Space Grotesk',system-ui,sans-serif; --f-body:'Inter',system-ui,sans-serif; --f-mono:'JetBrains Mono',ui-monospace,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C1514; --surface:#131E1D; --surface-2:#1B2A28; --fg:#E6F0EE; --muted:#9DB3AF; --line:#2A3D3A;
+  --accent:#3DC2A6; --accent-fg:#04201A; --accent-soft:#12352F;
+  --warn:#F0B24B; --warn-soft:#3A2A0C; --bad:#FF8A80; --bad-soft:#3E1A18; --good:#6FD08C; --good-soft:#143323;
+  --ph-body:#3B4F4C; --ph-screen:#2F5D54; --ph-scratch:#7FA39C; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C1514; --surface:#131E1D; --surface-2:#1B2A28; --fg:#E6F0EE; --muted:#9DB3AF; --line:#2A3D3A;
+  --accent:#3DC2A6; --accent-fg:#04201A; --accent-soft:#12352F;
+  --warn:#F0B24B; --warn-soft:#3A2A0C; --bad:#FF8A80; --bad-soft:#3E1A18; --good:#6FD08C; --good-soft:#143323;
+  --ph-body:#3B4F4C; --ph-screen:#2F5D54; --ph-scratch:#7FA39C; color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--fg);font:15px/1.55 var(--f-body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;margin:0;text-wrap:balance}
+h2{font-size:clamp(1.5rem,3.2vw,2rem);letter-spacing:-.01em}
+h3{font-size:1.05rem}
+p{margin:0}
+a{color:var(--accent)}
+.wrap{max-width:1120px;margin-inline:auto}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.eyebrow{font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));padding-inline:max(16px,env(safe-area-inset-left,0px))}
+.top .wrap{display:flex;align-items:center;gap:20px;min-height:56px}
+.logo{font:700 1.15rem var(--f-display);text-decoration:none;color:var(--fg);white-space:nowrap;display:flex;align-items:center;gap:8px}
+.logo i{width:12px;height:12px;border-radius:3px;background:var(--accent);display:inline-block}
+nav{display:flex;gap:2px;overflow-x:auto;flex:1;min-width:0;scrollbar-width:none}
+nav a{color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:8px;white-space:nowrap;font-weight:500;font-size:.9rem}
+nav a:hover{background:var(--surface-2);color:var(--fg)}
+.cart-link{display:flex;align-items:center;gap:6px;text-decoration:none;color:var(--fg);font-weight:600;padding:8px 12px;border:1px solid var(--line);border-radius:8px;white-space:nowrap}
+.cart-link b{background:var(--accent);color:var(--accent-fg);border-radius:99px;min-width:22px;text-align:center;font-size:.78rem;padding:1px 6px}
+
+/* sections */
+section{padding-block:56px 8px;scroll-margin-top:72px}
+.sec-head{display:grid;gap:8px;margin-bottom:24px;max-width:70ch}
+.cols{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:24px;align-items:start}
+.sticky{position:sticky;top:calc(72px + env(safe-area-inset-top,0px))}
+@media (max-width:860px){.cols{grid-template-columns:minmax(0,1fr)}.sticky{position:static}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;min-width:0}
+.card.flat{background:var(--surface-2);border-color:transparent}
+.stack{display:grid;gap:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+/* hero */
+.hero{padding-block:44px 8px}
+.hero .cols{align-items:center}
+.hero h1{font-size:clamp(2rem,5vw,3.3rem);letter-spacing:-.02em;margin-bottom:14px}
+.hero p.lead{font-size:1.1rem;color:var(--muted);max-width:52ch}
+.quick{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+
+/* controls */
+.btn{font:600 .95rem var(--f-body);background:var(--accent);color:var(--accent-fg);border:0;border-radius:8px;padding:11px 18px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.warn{background:var(--bad);color:var(--surface)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:7px 12px;font-size:.85rem}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chip{font:500 .9rem var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:8px 13px;cursor:pointer}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+label.lbl{display:grid;gap:5px;font-weight:600;font-size:.85rem;min-width:0}
+input[type=text],input[type=number],input[type=date],select,textarea{font:400 .95rem var(--f-body);background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%;min-width:0}
+input[type=file]{font-size:.85rem;max-width:100%}
+.fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:11px 13px;border:1px solid var(--line);border-radius:8px;background:var(--surface);cursor:pointer;min-width:0}
+.opt input{margin-top:4px;accent-color:var(--accent)}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.opt b{display:block;font-size:.92rem}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.steps-q{display:grid;gap:18px}
+.step-t{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-weight:600}
+.step-t span{width:24px;height:24px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:.78rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.other-in{margin-top:10px}
+fieldset{border:0;padding:0;margin:0;min-width:0}
+legend{font-weight:600;padding:0;margin-bottom:8px}
+.msg{padding:11px 14px;border-radius:8px;font-size:.92rem}
+.msg.ok{background:var(--good-soft);color:var(--good)}
+.msg.err{background:var(--bad-soft);color:var(--bad)}
+.msg.info{background:var(--accent-soft);color:var(--fg)}
+.msg.warn{background:var(--warn-soft);color:var(--warn)}
+
+/* estimate */
+.price-big{font:700 2rem var(--f-display);letter-spacing:-.02em}
+.kv{display:grid;gap:8px;margin:14px 0 0;padding:0;list-style:none}
+.kv li{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:8px}
+.kv li span:first-child{color:var(--muted)}
+.kv li span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+
+/* OS */
+.stepper{list-style:none;padding:0;margin:18px 0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
+.stepper li{border-top:4px solid var(--line);padding-top:8px;font-size:.8rem;color:var(--muted);font-weight:500}
+.stepper li.done{border-color:var(--accent);color:var(--fg)}
+.stepper li.cur{border-color:var(--accent);color:var(--fg);font-weight:700}
+.stepper li.cur::after{content:"etapa atual";display:block;font-size:.7rem;color:var(--accent);text-transform:uppercase;letter-spacing:.06em}
+@media (max-width:640px){.stepper{grid-template-columns:1fr}.stepper li{border-top:0;border-left:4px solid var(--line);padding:2px 0 2px 10px}}
+.timeline{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.timeline li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;font-size:.9rem}
+.timeline time{color:var(--muted)}
+.bubble{background:var(--good-soft);color:var(--fg);padding:9px 12px;border-radius:4px 12px 12px 12px;font-size:.88rem;max-width:46ch}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.shot{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.shot .ph{aspect-ratio:4/3;display:grid;place-items:center;background:repeating-linear-gradient(45deg,var(--surface-2),var(--surface-2) 10px,var(--bg) 10px,var(--bg) 20px);color:var(--muted);font-size:.8rem;text-align:center;padding:8px}
+.shot img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block}
+.shot figcaption{padding:8px 10px;font-size:.82rem}
+.tag{display:inline-block;font-size:.72rem;font-weight:700;padding:2px 8px;border-radius:99px;letter-spacing:.03em}
+.tag.old{background:var(--bad-soft);color:var(--bad)}
+.tag.new{background:var(--good-soft);color:var(--good)}
+canvas.sig{width:100%;height:120px;background:var(--surface-2);border:1px dashed var(--muted);border-radius:8px;touch-action:none;display:block}
+
+/* catalog */
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:20px}
+.grade{display:inline-grid;place-items:center;min-width:34px;height:24px;padding:0 8px;border-radius:6px;font:700 .8rem var(--f-display)}
+.g-Aplus{background:var(--accent);color:var(--accent-fg)}
+.g-A{background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+.g-B{background:var(--warn-soft);color:var(--warn)}
+.products{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin-top:18px}
+.prod{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.prod .pic{background:var(--surface-2);display:grid;place-items:center;padding:16px 0 8px;position:relative}
+.prod .pic svg{width:96px;height:auto;max-width:100%}
+.prod .pic small{position:absolute;left:10px;bottom:6px;font:500 .68rem var(--f-mono);color:var(--muted)}
+.prod .body{padding:14px 16px 16px;display:grid;gap:10px;flex:1;align-content:start}
+.prod .price{font:700 1.4rem var(--f-display)}
+details{border-top:1px solid var(--line);padding-top:8px}
+summary{cursor:pointer;font-weight:600;font-size:.88rem}
+details ul{margin:8px 0 0;padding-left:18px;font-size:.88rem;color:var(--muted)}
+
+/* checkout */
+.cart-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.cart-row:first-child{border-top:0}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{width:28px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+th{color:var(--muted);font-weight:600}
+.scroll-x{overflow-x:auto}
+pre{background:var(--surface-2);padding:14px;border-radius:8px;overflow-x:auto;font:500 .8rem/1.55 var(--f-mono);margin:0}
+.tot{display:flex;justify-content:space-between;gap:12px;padding:6px 0}
+.tot.big{font:700 1.3rem var(--f-display);border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
+
+/* floating */
+.fab{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:25}
+.chat{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:25;width:min(360px,calc(100vw - 32px));max-height:min(520px,70vh);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.chat header{padding:12px 14px;border-bottom:1px solid var(--line);font:600 .95rem var(--f-display);display:flex;justify-content:space-between;align-items:center}
+.chat .log{padding:12px;display:grid;gap:8px;overflow-y:auto;flex:1;align-content:start}
+.chat .me{justify-self:end;background:var(--accent);color:var(--accent-fg);padding:8px 11px;border-radius:12px 12px 4px 12px;max-width:85%;font-size:.88rem}
+.chat .bot{background:var(--surface-2);padding:8px 11px;border-radius:12px 12px 12px 4px;max-width:90%;font-size:.88rem}
+.chat footer{padding:10px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:6px}
+.chat footer .chip{font-size:.78rem;padding:5px 9px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;z-index:40;font-weight:500;font-size:.9rem;max-width:calc(100vw - 32px)}
+footer.site{margin-top:64px;border-top:1px solid var(--line);padding-block:28px;color:var(--muted);font-size:.85rem}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#topo"><i></i>Socram Tech</a>
+    <nav aria-label="Seções">
+      <a href="#reparo">Orçamento de reparo</a>
+      <a href="#acompanhar">Acompanhar OS</a>
+      <a href="#troca">Vender ou trocar</a>
+      <a href="#seminovos">Seminovos</a>
+      <a href="#integracoes">Integrações</a>
+    </nav>
+    <a class="cart-link" href="#carrinho">Carrinho <b id="cart-count">0</b></a>
+  </div>
+</header>
+
+<main class="wrap" id="topo">
+
+<div class="hero">
+  <div class="cols">
+    <div>
+      <p class="eyebrow">Assistência técnica, troca e seminovos</p>
+      <h1>Seu aparelho consertado, trocado ou renovado num lugar só.</h1>
+      <p class="lead">Veja o preço do reparo antes de sair de casa, acompanhe cada etapa na bancada e use seu celular usado como entrada num seminovo com garantia.</p>
+      <div class="quick">
+        <a class="btn" href="#reparo">Orçar um reparo</a>
+        <a class="btn ghost" href="#troca">Quanto vale meu celular?</a>
+      </div>
+    </div>
+    <form class="card" id="hero-os" autocomplete="off">
+      <h3>Acompanhe seu conserto</h3>
+      <p class="muted small" style="margin:6px 0 14px">Digite o CPF ou o número da OS. Para testar: <span class="mono">48213</span> ou <span class="mono">111.444.777-35</span>.</p>
+      <div class="row" style="flex-wrap:nowrap">
+        <input type="text" id="hero-q" placeholder="CPF ou nº da OS" aria-label="CPF ou número da OS">
+        <button class="btn" type="submit">Consultar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- A. REPARO -->
+<section id="reparo">
+  <div class="sec-head">
+    <p class="eyebrow">Assistência técnica</p>
+    <h2>Simulador de reparo</h2>
+    <p class="muted">Escolha o aparelho e o defeito. A faixa de preço e o tempo de bancada aparecem na hora; o valor final é confirmado depois da análise, sem compromisso.</p>
+  </div>
+  <div class="cols">
+    <div class="stack">
+      <div class="card"><div class="steps-q" id="sim-steps"></div></div>
+
+      <form class="card stack" id="os-new" novalidate>
+        <h3>Como o aparelho chega até nós</h3>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="delivery" value="moto" checked><span><b>Coleta por motoboy</b><span class="muted small">Buscamos na sua porta, até 30 km da loja. Valor por distância, como em app de corrida.</span></span></label>
+          <label class="opt"><input type="radio" name="delivery" value="correios"><span><b>Correios</b><span class="muted small">Você recebe o código de postagem para enviar sem custo de etiqueta.</span></span></label>
+          <label class="opt"><input type="radio" name="delivery" value="loja"><span><b>Levar na loja</b><span class="muted small">Escolha dia e horário. Rua Benjamim Baptista Cerezoli, Ribeirão Pires, das 8h às 18h.</span></span></label>
+        </div>
+        <div class="fields" id="f-moto">
+          <label class="lbl">CEP da coleta<input type="text" id="d-cep" inputmode="numeric" placeholder="00000-000" maxlength="9"></label>
+          <label class="lbl">Endereço e número<input type="text" id="d-addr" placeholder="Rua, número, complemento"></label>
+        </div>
+        <div class="fields" id="f-loja" hidden>
+          <label class="lbl">Dia<input type="date" id="d-date"></label>
+          <label class="lbl">Horário<select id="d-time"></select></label>
+        </div>
+        <div class="msg info small" id="f-correios" hidden>Ao abrir a OS mostramos o código de postagem. Embale o aparelho sem carregador e sem chip.</div>
+        <div class="fields">
+          <label class="lbl">Seu nome<input type="text" id="c-name" autocomplete="name"></label>
+          <label class="lbl">CPF<input type="text" id="c-cpf" inputmode="numeric" placeholder="000.000.000-00" maxlength="14"></label>
+          <label class="lbl">WhatsApp<input type="text" id="c-phone" inputmode="tel" placeholder="(11) 90000-0000" maxlength="15"></label>
+        </div>
+        <div class="row"><button class="btn" type="submit">Abrir ordem de serviço</button><span class="muted small">Você recebe cada atualização no WhatsApp.</span></div>
+        <div id="os-msg" aria-live="polite"></div>
+      </form>
+    </div>
+    <aside class="card sticky" id="sim-est" aria-live="polite"></aside>
+  </div>
+</section>
+
+<!-- PORTAL OS -->
+<section id="acompanhar">
+  <div class="sec-head">
+    <p class="eyebrow">Portal do cliente</p>
+    <h2>Acompanhe sua ordem de serviço</h2>
+    <p class="muted">Cada etapa fica registrada. Se aparecer um serviço extra, você aprova ou recusa aqui mesmo, com assinatura.</p>
+  </div>
+  <form class="card row" id="os-form" style="flex-wrap:nowrap;margin-bottom:18px" autocomplete="off">
+    <input type="text" id="os-q" placeholder="CPF ou nº da OS (ex.: 48213)" aria-label="CPF ou número da OS">
+    <button class="btn" type="submit">Consultar</button>
+  </form>
+  <div id="os-result"></div>
+</section>
+
+<!-- B. TROCA -->
+<section id="troca">
+  <div class="sec-head">
+    <p class="eyebrow">Compra e troca de usados</p>
+    <h2>Quanto vale o seu celular?</h2>
+    <p class="muted">Responda sobre o estado do aparelho. O valor máximo sai na hora e é confirmado na bancada. Você escolhe receber em Pix ou usar como entrada num seminovo.</p>
+  </div>
+  <div class="cols">
+    <form class="stack" id="tr-form" novalidate>
+      <div class="card stack">
+        <h3>1. Aparelho</h3>
+        <label class="lbl">Modelo<select name="model" id="tr-model"></select></label>
+        <fieldset><legend>Estado da tela</legend>
+          <div class="opts">
+            <label class="opt"><input type="radio" name="screen" value="ok" checked><span><b>Sem riscos</b></span></label>
+            <label class="opt"><input type="radio" name="screen" value="sup"><span><b>Riscos superficiais</b></span></label>
+            <label class="opt"><input type="radio" name="screen" value="crack"><span><b>Trincada</b></span></label>
+            <label class="opt"><input type="radio" name="screen" value="dead"><span><b>Manchada ou sem imagem</b></span></label>
+          </div>
+        </fieldset>
+      </div>
+      <div class="card stack">
+        <h3>2. Funcionamento</h3>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" name="f_on" checked><span><b>Liga perfeitamente</b></span></label>
+          <label class="opt"><input type="checkbox" name="f_bio" checked><span><b>Biometria ou Face ID funciona</b></span></label>
+          <label class="opt"><input type="checkbox" name="f_cam" checked><span><b>Câmeras operacionais</b></span></label>
+          <label class="opt"><input type="checkbox" name="f_spk" checked><span><b>Alto-falantes e microfone ok</b></span></label>
+        </div>
+        <div class="fields">
+          <label class="lbl" id="bat-ios">Saúde da bateria (%)<input type="number" name="bat" min="40" max="100" value="88"><span class="muted small" style="font-weight:400">Ajustes › Bateria › Saúde da bateria</span></label>
+          <label class="lbl" id="bat-and" hidden>Autonomia<select name="auton"><option value="boa">Dura o dia todo</option><option value="media">Chega ao fim da tarde</option><option value="ruim">Precisa carregar várias vezes</option></select></label>
+        </div>
+      </div>
+      <div class="card stack">
+        <h3>3. Acessórios e histórico</h3>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" name="a_box" checked><span><b>Caixa original</b></span></label>
+          <label class="opt"><input type="checkbox" name="a_cab" checked><span><b>Cabo e carregador</b></span></label>
+        </div>
+        <label class="lbl">Já passou por manutenção?
+          <select name="maint"><option value="none">Nunca abriu</option><option value="orig">Sim, com peças originais</option><option value="non">Sim, com peças não originais</option></select>
+        </label>
+      </div>
+    </form>
+
+    <aside class="stack sticky">
+      <div class="card" id="tr-out" aria-live="polite"></div>
+      <div class="card stack" id="tr-deal">
+        <h3>Como você quer fechar?</h3>
+        <div class="opts" style="grid-template-columns:1fr">
+          <label class="opt"><input type="radio" name="mode" value="cash" form="tr-form" checked><span><b>Vender para a loja</b><span class="muted small">Pix depois da validação física na bancada.</span></span></label>
+          <label class="opt"><input type="radio" name="mode" value="trade" form="tr-form"><span><b>Trocar por um seminovo</b><span class="muted small">O valor vira entrada, com bônus de 10% em crédito.</span></span></label>
+        </div>
+        <label class="lbl" id="tr-pick-wrap" hidden>Seminovo escolhido<select id="tr-pick"></select></label>
+        <div id="tr-diff"></div>
+      </div>
+      <form class="card stack" id="tr-term" novalidate>
+        <h3>Termo e checklist antes do envio</h3>
+        <div class="stack" style="gap:8px">
+          <label class="opt"><input type="checkbox" class="req"><span>Saí da conta iCloud ou Google e desativei o "Buscar iPhone" / "Encontrar meu dispositivo".</span></label>
+          <label class="opt"><input type="checkbox" class="req"><span>Removi senha, biometria e fiz backup dos meus dados.</span></label>
+          <label class="opt"><input type="checkbox" class="req"><span>Retirei chip e cartão de memória.</span></label>
+          <label class="opt"><input type="checkbox" class="req"><span>Declaro que o aparelho é meu, de procedência lícita, sem restrição de bloqueio ou financiamento.</span></label>
+        </div>
+        <div class="fields">
+          <label class="lbl">IMEI (digite *#06#)<input type="text" id="tr-imei" inputmode="numeric" maxlength="15"></label>
+          <label class="lbl">Nome completo (assinatura)<input type="text" id="tr-sign"></label>
+        </div>
+        <button class="btn" type="submit" id="tr-go" disabled>Confirmar proposta</button>
+        <div id="tr-msg" aria-live="polite"></div>
+      </form>
+    </aside>
+  </div>
+</section>
+
+<!-- C. SEMINOVOS -->
+<section id="seminovos">
+  <div class="sec-head">
+    <p class="eyebrow">Catálogo</p>
+    <h2>Seminovos revisados, com garantia</h2>
+    <p class="muted">Cada aparelho tem código de unidade, histórico de peças trocadas e garantia escrita. A foto mostra a unidade em estoque.</p>
+  </div>
+  <div class="legend">
+    <div class="card flat"><span class="grade g-Aplus">A+</span> <b>Excelente</b><p class="small muted">Sem marcas de uso, estado de novo, bateria acima de 85–90%.</p></div>
+    <div class="card flat"><span class="grade g-A">A</span> <b>Muito bom</b><p class="small muted">Micro riscos quase imperceptíveis na carcaça ou na tela.</p></div>
+    <div class="card flat"><span class="grade g-B">B</span> <b>Bom</b><p class="small muted">Marcas de uso visíveis, como pequenos descascados. 100% funcional.</p></div>
+  </div>
+  <div class="row" style="justify-content:space-between;align-items:flex-start">
+    <div class="row" id="filters"></div>
+    <button class="btn ghost sm" id="adm-toggle" type="button" aria-expanded="false" aria-controls="adm">Gerenciar estoque</button>
+  </div>
+  <form class="card stack" id="adm" hidden novalidate style="margin-top:16px">
+    <h3>Adicionar aparelho ao estoque</h3>
+    <p class="small muted">Para tirar um aparelho, use o botão "Remover do estoque" no cartão dele. As alterações ficam salvas só neste navegador. Para todos os clientes verem o estoque atualizado, ligue o site ao seu sistema (veja Integrações).</p>
+    <div class="fields">
+      <label class="lbl">Nome do aparelho<input type="text" id="a-name" placeholder="Ex.: iPhone 13 128 GB"></label>
+      <label class="lbl">Tipo<select id="a-type"><option value="celular">Celular</option><option value="tablet">Tablet</option><option value="notebook">Notebook</option><option value="outro">Outro</option></select></label>
+      <label class="lbl">Grade<select id="a-grade"><option>A+</option><option>A</option><option>B</option></select></label>
+      <label class="lbl">Preço (R$)<input type="number" id="a-price" min="1" step="10" inputmode="decimal"></label>
+      <label class="lbl">Bateria ou autonomia<input type="text" id="a-bat" placeholder="Ex.: 92% ou Autonomia boa"></label>
+      <label class="lbl">Garantia<select id="a-war"><option>90 dias</option><option>3 meses</option><option selected>6 meses</option></select></label>
+    </div>
+    <label class="lbl">Peças trocadas (separe por ponto e vírgula)<input type="text" id="a-hist" placeholder="Bateria nova instalada e testada; Tela original"></label>
+    <label class="lbl">Foto real da unidade (opcional)<input type="file" id="a-photo" accept="image/*"></label>
+    <div class="row"><button class="btn" type="submit">Adicionar ao catálogo</button><button class="btn ghost" type="button" id="adm-reset">Restaurar exemplos</button></div>
+    <div id="adm-msg" aria-live="polite"></div>
+  </form>
+  <div class="products" id="products"></div>
+</section>
+
+<!-- CHECKOUT -->
+<section id="carrinho">
+  <div class="sec-head">
+    <p class="eyebrow">Finalizar</p>
+    <h2>Carrinho, frete e pagamento</h2>
+  </div>
+  <div class="cols">
+    <div class="stack">
+      <div class="card" id="cart-body"></div>
+      <div class="card stack">
+        <h3>Entrega</h3>
+        <div class="row" style="flex-wrap:nowrap">
+          <input type="text" id="co-cep" inputmode="numeric" placeholder="Seu CEP" maxlength="9" aria-label="CEP de entrega">
+          <button class="btn" type="button" id="co-calc">Calcular frete</button>
+        </div>
+        <div id="ship-opts" class="stack" style="gap:8px"></div>
+      </div>
+      <div class="card stack">
+        <h3>Pagamento</h3>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="pay" value="pix" checked><span><b>Pix, 5% de desconto</b><span class="muted small">Aprovação imediata.</span></span></label>
+          <label class="opt"><input type="radio" name="pay" value="card"><span><b>Cartão de crédito</b><span class="muted small">Em até 12x. Até 3x sem juros.</span></span></label>
+        </div>
+        <div id="inst"></div>
+      </div>
+    </div>
+    <aside class="card sticky" id="summary" aria-live="polite"></aside>
+  </div>
+</section>
+
+<!-- D. INTEGRAÇÕES -->
+<section id="integracoes">
+  <div class="sec-head">
+    <p class="eyebrow">Para a equipe</p>
+    <h2>Integrações e mensagens automáticas</h2>
+    <p class="muted">Como o site conversa com o seu sistema atual e com o WhatsApp. Os endpoints abaixo são o contrato sugerido para a implementação.</p>
+  </div>
+  <div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))">
+    <div class="card stack">
+      <h3>Estoque: sincronização</h3>
+      <p class="small muted">O sistema atual envia cada mudança por webhook. O site nunca vende o que já saiu do estoque.</p>
+<pre>POST /api/webhooks/estoque
+{
+  "evento": "unidade.atualizada",
+  "sku": "UN-4471",
+  "tipo": "seminovo",
+  "status": "disponivel | reservado | vendido",
+  "preco": 2390.00,
+  "grade": "A+",
+  "bateria": 100,
+  "garantia_dias": 180
+}</pre>
+    </div>
+    <div class="card stack">
+      <h3>Ordem de serviço: status e WhatsApp</h3>
+      <p class="small muted">Cada mudança de etapa dispara uma mensagem pela API oficial do WhatsApp (ou Z-API).</p>
+<pre>POST /api/webhooks/os
+{
+  "os": "48213",
+  "etapa": "aguardando_aprovacao",
+  "cliente": { "nome": "Marcos", "whatsapp": "5511900000000" },
+  "complemento": { "descricao": "Conector oxidado", "valor": 120.00 }
+}
+→ envia template  os_status_{etapa}</pre>
+    </div>
+    <div class="card stack">
+      <h3>Modelos de mensagem</h3>
+      <div class="stack" style="gap:8px" id="templates"></div>
+    </div>
+    <div class="card stack">
+      <h3>Qual caminho de desenvolvimento?</h3>
+      <div class="scroll-x"><table>
+        <thead><tr><th>Modelo</th><th>Vantagens</th><th>Desvantagens</th></tr></thead>
+        <tbody>
+          <tr><td><b>React + Node.js</b></td><td>Controle total dos fluxos, integração limpa com suas APIs, desempenho e layout exclusivo.</td><td>Mais tempo até a primeira versão.</td></tr>
+          <tr><td><b>WooCommerce</b></td><td>Lançamento mais rápido, e-commerce e gateways prontos.</td><td>Trade-in e regras complexas exigem plugins sob medida.</td></tr>
+        </tbody>
+      </table></div>
+      <p class="small muted">Esta página já é o protótipo funcional dos fluxos. Para a solução definitiva e escalável, a opção React + Node.js reaproveita estas telas diretamente.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="row" style="justify-content:space-between">
+    <span><b>Socram Tech</b><br>Rua Benjamim Baptista Cerezoli, Ribeirão Pires, SP, CEP 09404-600<br>Atendimento das 8h às 18h</span>
+    <span>WhatsApp da loja: <span class="mono" id="wa-label"></span></span>
+  </div>
+</footer>
+</main>
+
+<button class="btn fab" id="chat-fab" aria-expanded="false" aria-controls="chat">Dúvidas?</button>
+<div class="chat" id="chat" hidden>
+  <header><span>Assistente Socram Tech</span><button class="chip" id="chat-x" aria-label="Fechar">Fechar</button></header>
+  <div class="log" id="chat-log" aria-live="polite"></div>
+  <footer id="chat-faq"></footer>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+(function(){
+'use strict';
+/* ====== CONFIGURAÇÃO (edite aqui) ====== */
+var CFG={
+  addr:'Rua Benjamim Baptista Cerezoli, Ribeirão Pires, SP, CEP 09404-600', hours:'das 8h às 18h',
+  wa:'5511933572441', waLabel:'(11) 93357-2441',     // WhatsApp da loja
+  storeCep:9404600, maxKm:30,                        // CEP de saída do motoboy e raio de entrega no mesmo dia
+  moto:{base:4.5,perKm:1.65,perMin:0.30,min:9,peak:1.25}, // tarifa estilo app de corrida: base + km + minutos
+  pix:0.05, semJuros:3, jurosMes:0.0249             // desconto Pix, parcelas sem juros, juros ao mês
+};
+var $=function(s,r){return (r||document).querySelector(s)};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s))};
+var brl=function(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})};
+var r10=function(v){return Math.round(v/10)*10};
+var digits=function(s){return String(s||'').replace(/\D/g,'')};
+var esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+var pad=function(n){return n<10?'0'+n:''+n};
+function stamp(){var d=new Date();return pad(d.getDate())+'/'+pad(d.getMonth()+1)+' '+pad(d.getHours())+':'+pad(d.getMinutes())}
+function toast(t){var e=$('#toast');e.textContent=t;e.hidden=false;clearTimeout(toast.t);toast.t=setTimeout(function(){e.hidden=true},2400)}
+function waBtn(msg,label){return '<a class="btn" style="margin-top:10px" target="_blank" rel="noopener" href="'+waLink(msg)+'">'+label+'</a>'}
+function waLink(msg){return 'https://wa.me/'+CFG.wa+'?text='+encodeURIComponent(msg)}
+function cpfOk(c){c=digits(c);if(c.length!==11||/^(\d)\1+$/.test(c))return false;
+  for(var t=9;t<11;t++){var s=0;for(var i=0;i<t;i++)s+=c[i]*(t+1-i);var d=(s*10)%11%10;if(d!=c[t])return false}return true}
+function maskCpf(v){v=digits(v).slice(0,11);return v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2')}
+function maskCep(v){v=digits(v).slice(0,8);return v.length>5?v.slice(0,5)+'-'+v.slice(5):v}
+function maskPhone(v){v=digits(v).slice(0,11);if(v.length>6)return '('+v.slice(0,2)+') '+v.slice(2,v.length-4)+'-'+v.slice(v.length-4);if(v.length>2)return '('+v.slice(0,2)+') '+v.slice(2);return v}
+function pmt(P,n){if(n<=CFG.semJuros)return P/n;var i=CFG.jurosMes;return P*i/(1-Math.pow(1+i,-n))}
+$('#wa-label').textContent=CFG.waLabel;
+
+var S={
+  repair:{cat:'Celular',brand:'Apple',model:'iPhone 13',defect:'Tela'},
+  admin:false, n:1, rmPending:null, cart:[], ship:null, pay:'pix', filter:{type:'todos',grade:'todos'},
+  trade:null, osView:null
+};
+
+/* ====== DADOS ====== */
+var CATS={
+  'Celular':{mult:1,brands:{
+    'Apple':[['iPhone XR',1],['iPhone 11',2],['iPhone 12',3],['iPhone 13',3],['iPhone 14',4],['iPhone 15',4],['iPhone 16',4]],
+    'Samsung':[['Galaxy A05',1],['Galaxy A15',1],['Galaxy A25',1],['Galaxy A35',2],['Galaxy A55',2],['Galaxy S21',3],['Galaxy S22',3],['Galaxy S23',4],['Galaxy S24',4]],
+    'Motorola':[['Moto E14',1],['Moto G24',1],['Moto G34',1],['Moto G54',1],['Moto G84',2],['Edge 40',3],['Edge 50',3]],
+    'Xiaomi':[['Redmi 13C',1],['Redmi Note 12',1],['Redmi Note 13',1],['Redmi Note 13 Pro',2],['Poco X5',2],['Poco X6',2]],
+    'Realme':[['C55',1],['Realme 11',1],['Realme 12 Pro',2]],
+    'Asus':[['Zenfone 9',2],['ROG Phone 6',3]],
+    'LG':[['K41S',1],['K62',1]]}},
+  'Tablet':{mult:1.3,brands:{
+    'Apple':[['iPad 9ª geração',2],['iPad 10ª geração',3],['iPad mini 6',2],['iPad Air 5',3],['iPad Pro 11',4]],
+    'Samsung':[['Galaxy Tab A8',1],['Galaxy Tab A9',1],['Galaxy Tab A9+',1],['Galaxy Tab S6 Lite',2],['Galaxy Tab S8',3],['Galaxy Tab S9',4]],
+    'Lenovo':[['Tab M10',1],['Tab P11',2]],
+    'Xiaomi':[['Redmi Pad',1],['Xiaomi Pad 6',2]],
+    'Multilaser':[['M10',1],['M8',1]]}},
+  'Notebook':{mult:1.3,brands:{
+    'Dell':[['Vostro 3510',1],['Inspiron 15',2],['Latitude 5420',2],['XPS 13',3]],
+    'Lenovo':[['IdeaPad 3',1],['IdeaPad Gaming 3',2],['ThinkPad E14',2],['Legion 5',2]],
+    'Acer':[['Aspire 3',1],['Aspire 5',1],['Nitro 5',2]],
+    'HP':[['240 G8',1],['Pavilion 15',2],['Victus 15',2]],
+    'Samsung':[['Galaxy Book',1],['Galaxy Book2',1],['Galaxy Book3',2]],
+    'Asus':[['VivoBook 15',1],['Zenbook 14',2],['TUF Gaming F15',2]],
+    'Apple':[['MacBook Air M1',4],['MacBook Air M2',4],['MacBook Pro 14',4]],
+    'Positivo':[['Vision',1],['Motion',1]]}},
+  'Smartwatch':{mult:1,tiers:[0,1,1.5,2.4],brands:{
+    'Apple':[['Apple Watch SE',2],['Apple Watch Series 8',2],['Apple Watch Series 9',3],['Apple Watch Ultra',3]],
+    'Samsung':[['Galaxy Watch4',2],['Galaxy Watch5',2],['Galaxy Watch6',3]],
+    'Xiaomi':[['Redmi Watch 3',1],['Mi Band 8',1]],
+    'Amazfit':[['Bip 5',1],['GTR 4',2]],
+    'Garmin':[['Forerunner 255',3],['Venu 2',3]]}},
+  'Videogame':{mult:1,tiers:[0,1,1.4,1.8],brands:{
+    'Sony':[['PlayStation 4',1],['PlayStation 4 Pro',2],['PlayStation 5',3],['Controle DualShock 4',1],['Controle DualSense',1]],
+    'Microsoft':[['Xbox One',1],['Xbox Series S',2],['Xbox Series X',3],['Controle Xbox',1]],
+    'Nintendo':[['Switch Lite',1],['Switch',2],['Switch OLED',2],['Joy-Con',1]],
+    'Valve':[['Steam Deck',3]]}}
+};
+var TIER=[0,1,1.25,1.6,2];
+var TIER_T=[0,1,1.6,2.6,4.2];
+var ALL=['Celular','Tablet','Notebook','Smartwatch','Videogame'];
+var DEFECTS={
+  'Tela':{only:['Celular','Tablet','Notebook','Smartwatch'],tiers:TIER_T,min:250,max:420,time:'1 a 2 horas',diag:'Troca do conjunto de tela e toque. Testamos brilho, toque e sensores depois da troca.'},
+  'Bateria':{only:['Celular','Tablet','Notebook','Smartwatch'],min:110,max:180,time:'40 min a 1 hora',diag:'Medimos ciclos e saúde da bateria antes de trocar e calibramos depois.'},
+  'Não liga':{only:ALL,generic:true,min:120,max:380,time:'1 a 3 dias úteis',diag:'Medimos consumo e tensões para achar a causa: bateria, carga, software ou placa. O valor final depende do que for encontrado.'},
+  'Placa':{only:ALL,generic:true,min:250,max:600,time:'2 a 5 dias úteis',diag:'Análise em microscópio e medição de curto. O reparo é feito no nível do componente quando há conserto.'},
+  'Conector de carga':{only:['Celular','Tablet','Notebook','Videogame'],min:120,max:220,time:'1 a 2 horas',diag:'Limpeza ou troca do conector. Testamos carga e transferência de dados.'},
+  'Câmera':{only:['Celular','Tablet','Notebook'],min:150,max:300,time:'1 a 2 horas',diag:'Troca do módulo e teste de foco, estabilização e flash.'},
+  'Danos por água':{only:ALL,generic:true,min:180,max:500,time:'2 a 4 dias úteis',diag:'Limpeza em ultrassom e diagnóstico completo. Quanto antes o aparelho chegar, maior a chance de recuperar.'},
+  'Alto-falante ou microfone':{only:['Celular','Tablet','Notebook','Smartwatch'],min:80,max:180,time:'1 a 2 horas',diag:'Troca ou limpeza do componente de áudio e teste em chamada e gravação.'},
+  'Biometria ou Face ID':{only:['Celular','Tablet'],min:150,max:350,time:'1 a 3 dias úteis',diag:'Diagnóstico do sensor e do flex. Em alguns modelos o reconhecimento facial depende de peça original.'},
+  'Software e travamentos':{only:ALL,generic:true,min:60,max:150,time:'1 a 3 horas',diag:'Atualização, restauração e remoção de falhas de sistema. Faça backup antes de enviar o aparelho.'},
+  'Sinal, Wi-Fi ou chip':{only:['Celular','Tablet','Notebook','Videogame'],min:110,max:260,time:'1 a 2 dias úteis',diag:'Teste de antena, leitor de chip e módulo de rede, com troca do que estiver com defeito.'},
+  'Teclado':{only:['Notebook'],min:100,max:250,time:'1 a 3 dias úteis',diag:'Troca do teclado ou de teclas, com limpeza interna.'},
+  'Dobradiça ou carcaça':{only:['Notebook'],min:140,max:300,time:'1 a 3 dias úteis',diag:'Reforço ou troca de dobradiça e recuperação de carcaça quebrada.'},
+  'Superaquecimento':{only:['Notebook','Videogame'],min:100,max:200,time:'1 a 2 dias úteis',diag:'Limpeza interna completa e troca de pasta térmica, com teste de temperatura sob carga.'},
+  'Porta HDMI':{only:['Videogame'],min:180,max:420,time:'2 a 4 dias úteis',diag:'Troca do conector HDMI e do circuito de vídeo quando necessário.'},
+  'Leitor de disco':{only:['Videogame'],min:200,max:420,time:'2 a 4 dias úteis',diag:'Troca ou ajuste do leitor e teste com disco original.'},
+  'Analógico com drift':{only:['Videogame'],min:70,max:150,time:'1 a 2 horas',diag:'Troca do módulo analógico e calibração.'}
+};
+var STAGES=['Aguardando Aparelho','Em Análise','Aguardando Aprovação','Em Manutenção','Testes de Qualidade','Pronto para Retirada/Envio'];
+var MSGS=[
+  'Recebemos sua OS {os}. Estamos aguardando o seu aparelho.',
+  'Seu {dev} chegou e está em análise técnica.',
+  'Precisamos da sua aprovação para um serviço extra na OS {os}. Abra o portal para ver o valor.',
+  'Tudo aprovado. Seu {dev} está em manutenção.',
+  'Reparo concluído. Estamos nos testes de qualidade.',
+  'Seu {dev} está pronto. Retire na loja ou aguarde o envio.'
+];
+var TRADE=[['iPhone XR',300],['iPhone 11',500],['iPhone 12',850],['iPhone 13',1250],['iPhone 14',1800],['iPhone 15',2700],['Galaxy A15',250],['Galaxy A35',550],['Galaxy A54',500],['Galaxy S21',550],['Galaxy S22',700],['Galaxy S23',1100],['Moto G54',250],['Moto G84',300],['Edge 40',600],['Redmi Note 12',250],['Redmi Note 13',300]];
+var SEED=[
+  {id:'UN-4471',name:'iPhone 12 128 GB',type:'celular',grade:'A+',price:2100,bat:'100%',hist:['Bateria nova instalada e testada'],war:'6 meses'},
+  {id:'UN-4502',name:'iPhone 13 128 GB',type:'celular',grade:'A',price:2790,bat:'91%',hist:['Tela original','Bateria original'],war:'6 meses'},
+  {id:'UN-4388',name:'iPhone 11 64 GB',type:'celular',grade:'B',price:1350,bat:'84%',hist:['Bateria original','Pequenos descascados na lateral'],war:'90 dias'},
+  {id:'UN-4519',name:'iPhone 14 128 GB',type:'celular',grade:'A+',price:3600,bat:'96%',hist:['Peças 100% originais'],war:'6 meses'},
+  {id:'UN-4430',name:'Galaxy S22 128 GB',type:'celular',grade:'A',price:1700,bat:'Autonomia boa',hist:['Tela original'],war:'6 meses'},
+  {id:'UN-4467',name:'Galaxy A35 128 GB',type:'celular',grade:'A+',price:1500,bat:'Autonomia ótima',hist:['Peças 100% originais'],war:'6 meses'},
+  {id:'UN-4351',name:'Moto G54 128 GB',type:'celular',grade:'B',price:750,bat:'Autonomia boa',hist:['Bateria nova instalada e testada'],war:'90 dias'},
+  {id:'UN-4490',name:'iPad 9ª geração 64 GB',type:'tablet',grade:'A',price:1790,bat:'89%',hist:['Tela original'],war:'6 meses'}
+];
+var STOCK_KEY='socram-estoque-v1';
+var TYPE_LABEL={celular:'Celulares',tablet:'Tablets',notebook:'Notebooks',outro:'Outros'};
+function loadStock(){try{var t=localStorage.getItem(STOCK_KEY);if(t){var a=JSON.parse(t);if(Array.isArray(a))return a}}catch(e){}return SEED.slice()}
+function saveStock(){try{localStorage.setItem(STOCK_KEY,JSON.stringify(USED));return true}catch(e){return false}}
+var USED=loadStock();
+
+/* ====== ILUSTRAÇÕES ====== */
+function phoneSVG(grade,tablet){
+  var w=tablet?150:96,h=tablet?110:160;
+  var sc='';
+  if(grade==='A')sc='<path d="M20 40 L34 52" stroke="var(--ph-scratch)" stroke-width="1" opacity=".5"/>';
+  if(grade==='B')sc='<path d="M18 38 L40 66 M60 30 L76 44 M30 100 L52 108" stroke="var(--ph-scratch)" stroke-width="1.4" opacity=".85"/>';
+  if(tablet)return '<svg viewBox="0 0 150 110" width="'+w+'" role="img" aria-label="Ilustração de tablet"><rect x="4" y="4" width="142" height="102" rx="10" fill="var(--ph-body)"/><rect x="12" y="12" width="126" height="86" rx="4" fill="var(--ph-screen)"/><circle cx="75" cy="7" r="1.6" fill="var(--ph-scratch)"/>'+(grade==='B'?'<path d="M30 30 L58 58 M100 24 L120 44" stroke="var(--ph-scratch)" stroke-width="1.4" opacity=".85"/>':'')+'</svg>';
+  return '<svg viewBox="0 0 96 160" width="'+w+'" role="img" aria-label="Ilustração de celular"><rect x="4" y="4" width="88" height="152" rx="14" fill="var(--ph-body)"/><rect x="10" y="12" width="76" height="136" rx="8" fill="var(--ph-screen)"/><rect x="34" y="16" width="28" height="7" rx="3.5" fill="var(--ph-body)"/>'+sc+'</svg>';
+}
+
+/* ====== A. SIMULADOR ====== */
+var OTHER='__outro';
+function catName(){var r=S.repair;return r.cat===OTHER?(r.catTxt||'').trim():r.cat}
+function brandName(){var r=S.repair;return (r.cat===OTHER||r.brand===OTHER)?(r.brandTxt||'').trim():r.brand}
+function modelName(){var r=S.repair;return (r.cat===OTHER||r.brand===OTHER||r.model===OTHER)?(r.modelTxt||'').trim():r.model}
+function defName(){var r=S.repair;return r.defect===OTHER?(r.defTxt||'').trim():r.defect}
+function ready(){return !!(catName()&&brandName()&&modelName()&&defName())}
+function defectsFor(cat){return Object.keys(DEFECTS).filter(function(k){var d=DEFECTS[k];return cat===OTHER?d.generic:d.only.indexOf(cat)>-1})}
+function modelTier(){var r=S.repair,b=(CATS[r.cat]||{brands:{}}).brands[r.brand]||[];for(var i=0;i<b.length;i++)if(b[i][0]===r.model)return b[i][1];return 2}
+function chipset(list,sel,key,otherLabel){return list.map(function(v){return '<button type="button" class="chip" data-pick="'+key+'" data-v="'+esc(v)+'" aria-pressed="'+(v===sel)+'">'+esc(v)+'</button>'}).join('')+
+  '<button type="button" class="chip" data-pick="'+key+'" data-v="'+OTHER+'" aria-pressed="'+(sel===OTHER)+'">'+otherLabel+'</button>'}
+function txt(key,ph,label){return '<input type="text" class="other-in" data-txt="'+key+'" value="'+esc(S.repair[key]||'')+'" placeholder="'+ph+'" aria-label="'+label+'" maxlength="60">'}
+function step(n,t,chips,extra){return '<div><div class="step-t"><span>'+n+'</span>'+t+'</div>'+(chips?'<div class="chips">'+chips+'</div>':'')+(extra||'')+'</div>'}
+function estimate(){
+  var r=S.repair;if(!ready())return null;
+  var cat=CATS[r.cat];
+  if(!cat||r.defect===OTHER)return {custom:true};
+  var d=DEFECTS[r.defect],approx=(r.brand===OTHER||r.model===OTHER),tiers=cat.tiers||d.tiers||TIER,m=cat.mult*tiers[approx?2:modelTier()];
+  return {min:r5(d.min*m),max:r5(d.max*m),time:d.time,diag:d.diag,approx:approx};
+}
+function r5(v){return Math.round(v/10)*10}
+function renderSteps(){
+  var r=S.repair,h='',n=1;
+  h+=step(n++,'Tipo de aparelho',chipset(Object.keys(CATS),r.cat,'cat','Outro tipo'),r.cat===OTHER?txt('catTxt','Ex.: câmera, drone, patinete elétrico','Qual é o aparelho'):'');
+  if(r.cat===OTHER){
+    h+=step(n++,'Marca e modelo','',txt('brandTxt','Marca','Marca do aparelho')+txt('modelTxt','Modelo','Modelo do aparelho'));
+  }else if(r.cat){
+    h+=step(n++,'Marca',chipset(Object.keys(CATS[r.cat].brands),r.brand,'brand','Outra marca'),r.brand===OTHER?txt('brandTxt','Qual é a marca?','Marca do aparelho'):'');
+    if(r.brand===OTHER)h+=step(n++,'Modelo','',txt('modelTxt','Qual é o modelo?','Modelo do aparelho'));
+    else if(r.brand)h+=step(n++,'Modelo',chipset(CATS[r.cat].brands[r.brand].map(function(x){return x[0]}),r.model,'model','Outro modelo'),r.model===OTHER?txt('modelTxt','Qual é o modelo?','Modelo do aparelho'):'');
+  }
+  h+=step(n,'Defeito apresentado',chipset(defectsFor(r.cat),r.defect,'defect','Outro defeito'),r.defect===OTHER?txt('defTxt','Descreva o defeito','Descrição do defeito'):'');
+  $('#sim-steps').innerHTML=h;
+}
+function renderEst(){
+  var r=S.repair,e=estimate(),box=$('#sim-est');
+  if(!e){box.innerHTML='<p class="eyebrow">Estimativa</p><h3 style="margin:6px 0 8px">Falta pouco</h3><p class="muted">Escolha o aparelho, a marca, o modelo e o defeito para ver a faixa de preço e o tempo de bancada.</p>';return}
+  var dev=(r.cat===OTHER?catName()+' ':'')+brandName()+' '+modelName();
+  var wa=waLink('Olá! Quero um orçamento para: '+dev+' ('+catName()+'), defeito: '+defName()+'.'+(e.custom?'':' Faixa estimada no site: '+brl(e.min)+' a '+brl(e.max)+'.'));
+  if(e.custom){
+    box.innerHTML='<p class="eyebrow">Orçamento sob análise</p>'+
+      '<p class="small muted" style="margin-top:4px">'+esc(dev+' · '+defName())+'</p>'+
+      '<p class="price-big" style="font-size:1.45rem;margin:10px 0 6px">Valor definido após a análise</p>'+
+      '<p class="small muted">Para este aparelho ou defeito não há faixa automática. A análise na bancada é gratuita e você só paga se aprovar o valor.</p>'+
+      '<ul class="kv"><li><span>Análise</span><span>Sem custo</span></li><li><span>Aprovação</span><span>Antes de qualquer serviço</span></li></ul>'+
+      '<a class="btn ghost sm" style="margin-top:14px" target="_blank" rel="noopener" href="'+wa+'">Falar com um técnico no WhatsApp</a>';
+    return;
+  }
+  box.innerHTML='<p class="eyebrow">Diagnóstico preliminar</p>'+
+    '<p class="small muted" style="margin-top:4px">'+esc(dev+' · '+defName())+'</p>'+
+    '<p class="price-big" style="margin:10px 0 2px">'+brl(e.min)+' a '+brl(e.max)+'</p>'+
+    '<p class="small muted">Faixa prévia. O valor final é confirmado após a análise e só é cobrado se você aprovar.</p>'+
+    (e.approx?'<div class="msg warn small" style="margin-top:10px">Marca ou modelo fora da lista: usamos uma faixa média. O valor exato sai na análise.</div>':'')+
+    '<ul class="kv"><li><span>Tempo de bancada</span><span>'+e.time+'</span></li><li><span>Garantia do serviço</span><span>90 dias</span></li><li><span>Análise</span><span>Sem custo</span></li></ul>'+
+    '<p class="small" style="margin-top:14px">'+esc(e.diag)+'</p>'+
+    '<a class="btn ghost sm" style="margin-top:14px" target="_blank" rel="noopener" href="'+wa+'">Falar com um técnico no WhatsApp</a>';
+}
+function renderSim(){renderSteps();renderEst()}
+$('#sim-steps').addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-pick]');if(!b)return;var k=b.dataset.pick,v=b.dataset.v,r=S.repair;
+  if(k==='cat'){r.cat=v;r.brand='';r.model='';r.brandTxt='';r.modelTxt='';if(v!==OTHER)r.catTxt='';
+    if(r.defect&&r.defect!==OTHER&&defectsFor(v).indexOf(r.defect)<0)r.defect=''}
+  else if(k==='brand'){r.brand=v;r.model='';r.modelTxt='';if(v!==OTHER)r.brandTxt=''}
+  else{r[k]=v;if(k==='model'&&v!==OTHER)r.modelTxt='';if(k==='defect'&&v!==OTHER)r.defTxt=''}
+  renderSim();
+  if(v===OTHER){var f={cat:'catTxt',brand:'brandTxt',model:'modelTxt',defect:'defTxt'}[k],i=$('#sim-steps [data-txt="'+f+'"]');if(i)i.focus()}
+});
+$('#sim-steps').addEventListener('input',function(ev){
+  var t=ev.target.closest('[data-txt]');if(!t)return;S.repair[t.dataset.txt]=t.value;renderEst();
+});
+/* entrega */
+var slots=[];for(var h=8;h<=17;h++){slots.push(pad(h)+':00')}
+$('#d-time').innerHTML=slots.map(function(s){return '<option>'+s+'</option>'}).join('');
+(function(){var d=new Date();d.setDate(d.getDate()+1);if(d.getDay()===0)d.setDate(d.getDate()+1);
+  $('#d-date').min=d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());$('#d-date').value=$('#d-date').min})();
+$$('input[name=delivery]').forEach(function(i){i.addEventListener('change',function(){
+  var v=$('input[name=delivery]:checked').value;
+  $('#f-moto').hidden=v!=='moto';$('#f-loja').hidden=v!=='loja';$('#f-correios').hidden=v!=='correios'})});
+$('#c-cpf').addEventListener('input',function(e){e.target.value=maskCpf(e.target.value)});
+$('#c-phone').addEventListener('input',function(e){e.target.value=maskPhone(e.target.value)});
+$('#d-cep').addEventListener('input',function(e){e.target.value=maskCep(e.target.value)});
+$('#co-cep').addEventListener('input',function(e){e.target.value=maskCep(e.target.value)});
+/* Distância estimada a partir da diferença entre os CEPs (aproximação). Em produção, trocar por uma API de rotas (Google Maps, Mapbox). */
+function estKm(cep){var c=digits(cep);if(c.length!==8)return null;var n=parseInt(c,10);if(n>=20000000)return null;
+  var d=Math.abs(Math.floor(n/1000)-Math.floor(CFG.storeCep/1000));return Math.max(1,Math.round(0.6*Math.sqrt(d)*10)/10)}
+function isLocal(cep){var k=estKm(cep);return k!==null&&k<=CFG.maxKm}
+function motoFare(km){var m=CFG.moto,min=km*2.8,h=new Date().getHours(),dow=new Date().getDay(),peak=dow>0&&dow<6&&((h>=7&&h<9)||(h>=17&&h<19));
+  var v=Math.max(m.min,m.base+m.perKm*km+m.perMin*min)*(peak?m.peak:1);return {price:Math.round(v*10)/10,peak:peak,min:Math.round(min)}}
+
+var ORDERS={
+  '48213':{id:'48213',cpf:'12345678909',name:'Marcos Almeida',device:'iPhone 13',defect:'Tela',status:2,
+    extra:{desc:'Conector de carga com oxidação, encontrado durante a análise',price:120,state:'pending'},
+    events:[{t:'08/11 14:20',s:0,m:'OS aberta pelo site.'},{t:'09/11 10:05',s:1,m:'Aparelho recebido e em análise.'},{t:'10/11 08:12',s:2,m:'Análise concluída. Serviço extra aguardando aprovação.'}],
+    gallery:[{kind:'old',label:'Conector de carga com oxidação (exemplo)'},{kind:'old',label:'Tela trincada, antes do reparo (exemplo)'}]},
+  '48190':{id:'48190',cpf:'11144477735',name:'Juliana Prado',device:'Galaxy S22',defect:'Bateria',status:4,extra:null,
+    events:[{t:'05/11 11:40',s:0,m:'OS aberta pelo site.'},{t:'06/11 09:30',s:1,m:'Aparelho recebido e em análise.'},{t:'06/11 15:10',s:3,m:'Em manutenção. Bateria será substituída.'},{t:'09/11 16:45',s:4,m:'Reparo concluído. Em testes de qualidade.'}],
+    gallery:[{kind:'old',label:'Bateria antiga, estufada (exemplo)'},{kind:'new',label:'Bateria nova instalada e testada (exemplo)'}]}
+};
+$('#os-new').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  var msg=$('#os-msg'),r=S.repair,del=$('input[name=delivery]:checked').value;
+  function err(t){msg.innerHTML='<div class="msg err">'+t+'</div>'}
+  if(!ready())return err('Complete o simulador acima: aparelho, marca, modelo e defeito.');
+  var name=$('#c-name').value.trim(),cpf=$('#c-cpf').value,ph=digits($('#c-phone').value);
+  if(name.length<3)return err('Informe seu nome.');
+  if(!cpfOk(cpf))return err('O CPF informado não é válido. Confira os números.');
+  if(ph.length<10)return err('Informe o WhatsApp com DDD.');
+  if(del==='moto'){
+    if(digits($('#d-cep').value).length!==8)return err('Informe o CEP da coleta com 8 números.');
+    if($('#d-addr').value.trim().length<5)return err('Informe o endereço da coleta.');
+    if(!isLocal($('#d-cep').value))return err('A coleta por motoboy atende até '+CFG.maxKm+' km da loja e esse CEP está fora. Escolha Correios ou leve à loja.');
+  }
+  if(del==='loja'){
+    if(!$('#d-date').value)return err('Escolha o dia da visita.');
+    if(new Date($('#d-date').value+'T12:00:00').getDay()===0)return err('Não abrimos aos domingos. Escolha outro dia.');
+  }
+  var id;do{id=String(48300+Math.floor(Math.random()*600))}while(ORDERS[id]);
+  ORDERS[id]={id:id,cpf:digits(cpf),name:name,device:((r.cat===OTHER?catName()+' ':'')+brandName()+' '+modelName()).trim(),defect:defName(),status:0,extra:null,gallery:[],
+    events:[{t:stamp(),s:0,m:'OS aberta pelo site.'}]};
+  var e=estimate(),extra='',delText='';
+  if(del==='correios'){var code='BM'+String(Math.floor(Math.random()*1e9)).padStart(9,'0')+'BR';delText='Envio pelos Correios (código de postagem '+code+')';
+    extra='<p style="margin-top:8px">Código de postagem: <b class="mono">'+code+'</b><br><span class="small">Exemplo de demonstração. O código real é emitido pela API dos Correios ou do Melhor Envio.</span></p>'}
+  if(del==='moto')delText='Coleta por motoboy: '+$('#d-addr').value.trim()+', CEP '+$('#d-cep').value+' (cerca de '+String(estKm($('#d-cep').value)).replace('.',',')+' km)';
+  if(del==='loja')delText='Visita na loja em '+$('#d-date').value.split('-').reverse().join('/')+' às '+$('#d-time').value;
+  if(del==='moto')extra='<p style="margin-top:8px">O motoboy entra em contato pelo WhatsApp para combinar o horário da coleta.</p>';
+  if(del==='loja')extra='<p style="margin-top:8px">Atendimento em <b>'+$('#d-date').value.split('-').reverse().join('/')+' às '+$('#d-time').value+'</b>.</p>';
+  var waMsg=['*Novo pedido de reparo, OS '+id+'*','Cliente: '+name,'WhatsApp: '+$('#c-phone').value,'CPF: '+cpf,
+    'Aparelho: '+((r.cat===OTHER?catName()+' ':'')+brandName()+' '+modelName()).trim()+' ('+catName()+')','Defeito: '+defName(),
+    e.custom?'Orçamento: sob análise':'Estimativa do site: '+brl(e.min)+' a '+brl(e.max),'Entrega: '+delText].join('\n');
+  msg.innerHTML='<div class="msg ok"><b>OS <span class="mono">'+id+'</span> aberta.</b> '+(e.custom?'Você recebe o orçamento depois da análise.':'Estimativa: '+brl(e.min)+' a '+brl(e.max)+'.')+' Avisamos você no WhatsApp a cada etapa.'+extra+
+    '<div style="margin-top:12px"><b>Último passo: avise a loja.</b><br><span class="small">Este site não envia o pedido sozinho. Toque no botão para a equipe da Socram Tech receber os dados no WhatsApp.</span><br>'+waBtn(waMsg,'Enviar pedido no WhatsApp')+' <button type="button" class="btn ghost" style="margin-top:10px" data-track="'+id+'">Acompanhar esta OS</button></div></div>';
+});
+document.addEventListener('click',function(ev){var t=ev.target.closest('[data-track]');if(t){openOS(t.dataset.track)}});
+
+/* ====== PORTAL OS ====== */
+function find(q){q=digits(q);if(!q)return null;if(ORDERS[q])return ORDERS[q];
+  var k=Object.keys(ORDERS);for(var i=0;i<k.length;i++)if(ORDERS[k[i]].cpf===q)return ORDERS[k[i]];return null}
+function openOS(q){$('#os-q').value=q;lookup(q);location.hash='acompanhar';var el=$('#acompanhar');if(el)el.scrollIntoView()}
+function lookup(q){
+  var o=find(q);
+  if(!o){S.osView=null;$('#os-result').innerHTML='<div class="msg err">Não encontramos uma OS com esse dado. Confira o CPF ou o número e tente de novo.</div>';return}
+  S.osView=o.id;renderOS();
+}
+function msgFor(o,s){return MSGS[s].replace('{os}',o.id).replace('{dev}',o.device)}
+function renderOS(){
+  var o=ORDERS[S.osView];if(!o)return;
+  var h='<div class="stack">';
+  h+='<div class="card"><div class="row" style="justify-content:space-between;align-items:flex-start"><div><p class="eyebrow">Ordem de serviço</p><h3 class="mono" style="font-size:1.6rem;margin-top:4px">OS '+o.id+'</h3></div><div style="text-align:right"><b>'+esc(o.device)+'</b><br><span class="muted small">'+esc(o.defect)+' · '+esc(o.name.split(' ')[0])+'</span></div></div>';
+  h+='<ol class="stepper">'+STAGES.map(function(s,i){return '<li class="'+(i<o.status?'done':i===o.status?'cur':'')+'">'+s+'</li>'}).join('')+'</ol></div>';
+  if(o.status===2&&o.extra&&o.extra.state==='pending'){
+    h+='<div class="card stack" style="border-color:var(--warn)"><div><span class="tag" style="background:var(--warn-soft);color:var(--warn)">PRECISA DA SUA RESPOSTA</span><h3 style="margin-top:8px">Serviço extra encontrado na análise</h3></div>'+
+    '<p>'+esc(o.extra.desc)+'. Valor adicional: <b class="num">'+brl(o.extra.price)+'</b>.</p>'+
+    '<label class="lbl">Seu nome completo<input type="text" id="ap-name" autocomplete="name"></label>'+
+    '<div><p class="small" style="font-weight:600;margin-bottom:6px">Assine abaixo com o dedo ou o mouse</p><canvas class="sig" id="sig" aria-label="Campo de assinatura"></canvas><button class="btn ghost sm" type="button" id="sig-clear" style="margin-top:6px">Limpar assinatura</button></div>'+
+    '<div class="row"><button class="btn" type="button" data-act="approve">Aprovar serviço extra</button><button class="btn ghost" type="button" data-act="refuse">Recusar</button></div><div id="ap-msg" aria-live="polite"></div></div>';
+  } else if(o.extra&&o.extra.state!=='pending'){
+    h+='<div class="msg '+(o.extra.state==='approved'?'ok':'info')+'">Serviço extra ('+brl(o.extra.price)+'): <b>'+(o.extra.state==='approved'?'aprovado':'recusado')+'</b> com assinatura digital de '+esc(o.extra.signedBy||'')+'.</div>';
+  }
+  h+='<div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))">';
+  h+='<div class="card stack"><h3>Histórico</h3><ul class="timeline">'+o.events.slice().reverse().map(function(e){return '<li><time class="small mono">'+e.t+'</time><span>'+esc(e.m)+'</span></li>'}).join('')+'</ul></div>';
+  h+='<div class="card stack"><h3>Avisos enviados por WhatsApp</h3>'+o.events.filter(function(e){return typeof e.s==='number'}).map(function(e){return '<div><div class="bubble">'+esc(msgFor(o,e.s))+'</div><span class="small muted mono">'+e.t+'</span></div>'}).join('')+'</div>';
+  h+='</div>';
+  h+='<div class="card stack"><h3>Laudo técnico e fotos da bancada</h3>';
+  if(o.gallery.length){h+='<div class="gallery">'+o.gallery.map(function(g){return '<figure class="shot" style="margin:0">'+(g.src?'<img alt="'+esc(g.label)+'" src="'+g.src+'">':'<div class="ph">Foto da bancada<br>(espaço do exemplo)</div>')+'<figcaption><span class="tag '+g.kind+'">'+(g.kind==='old'?'PEÇA DANIFICADA':'PEÇA NOVA')+'</span><br>'+esc(g.label)+'</figcaption></figure>'}).join('')+'</div>'}
+  else h+='<p class="muted">As fotos da peça danificada e da peça nova aparecem aqui assim que o técnico as registrar.</p>';
+  h+='<details><summary>Painel da bancada (demonstração de uso interno)</summary><div class="stack" style="margin-top:12px">'+
+    '<div class="fields"><label class="lbl">Tipo da foto<select id="up-kind"><option value="old">Peça danificada</option><option value="new">Peça nova instalada</option></select></label><label class="lbl">Legenda<input type="text" id="up-label" placeholder="Ex.: Bateria estufada"></label></div>'+
+    '<input type="file" id="up-file" accept="image/*" aria-label="Foto da bancada">'+
+    '<div><button class="btn ghost sm" type="button" data-act="advance"'+(o.status===2&&o.extra&&o.extra.state==='pending'?' disabled':'')+(o.status>=5?' disabled':'')+'>Avançar para a próxima etapa</button> <span class="small muted">Simula o técnico mudando a etapa e disparando o WhatsApp.</span></div></div></details></div>';
+  h+='</div>';
+  $('#os-result').innerHTML=h;
+  if($('#sig'))initSig();
+}
+var ink=false;
+function initSig(){
+  var c=$('#sig'),dpr=window.devicePixelRatio||1,b=c.getBoundingClientRect();c.width=b.width*dpr;c.height=b.height*dpr;
+  var x=c.getContext('2d');x.scale(dpr,dpr);x.lineWidth=2;x.lineCap='round';ink=false;
+  var draw=false;
+  function pt(e){var r=c.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]}
+  c.addEventListener('pointerdown',function(e){draw=true;c.setPointerCapture(e.pointerId);var p=pt(e);x.strokeStyle=getComputedStyle(document.body).color;x.beginPath();x.moveTo(p[0],p[1])});
+  c.addEventListener('pointermove',function(e){if(!draw)return;var p=pt(e);x.lineTo(p[0],p[1]);x.stroke();ink=true});
+  ['pointerup','pointercancel'].forEach(function(n){c.addEventListener(n,function(){draw=false})});
+  $('#sig-clear').addEventListener('click',function(){x.clearRect(0,0,c.width,c.height);ink=false});
+}
+function advance(o,s,m){o.status=s;o.events.push({t:stamp(),s:s,m:m})}
+$('#os-result').addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-act]');if(!b)return;var o=ORDERS[S.osView],act=b.dataset.act;
+  if(act==='approve'||act==='refuse'){
+    var nm=($('#ap-name').value||'').trim(),m=$('#ap-msg');
+    if(nm.length<3){m.innerHTML='<div class="msg err">Digite seu nome completo para assinar.</div>';return}
+    if(!ink){m.innerHTML='<div class="msg err">Faça sua assinatura no campo acima.</div>';return}
+    o.extra.state=act==='approve'?'approved':'refused';o.extra.signedBy=nm;
+    advance(o,3,act==='approve'?'Serviço extra aprovado e assinado por '+nm+'. Em manutenção.':'Serviço extra recusado por '+nm+'. Seguimos só com o reparo original.');
+    renderOS();
+  }
+  if(act==='advance'&&o.status<5){var n=o.status+1;advance(o,n,'Etapa atualizada: '+STAGES[n]+'.');renderOS()}
+});
+$('#os-result').addEventListener('change',function(ev){
+  if(ev.target.id!=='up-file'||!ev.target.files[0])return;
+  var f=ev.target.files[0],o=ORDERS[S.osView],kind=$('#up-kind').value,label=$('#up-label').value.trim()||(kind==='old'?'Peça danificada':'Peça nova instalada');
+  var rd=new FileReader();rd.onload=function(){o.gallery.push({kind:kind,label:label,src:rd.result});o.events.push({t:stamp(),m:'Foto adicionada ao laudo: '+label+'.'});renderOS()};rd.readAsDataURL(f);
+});
+$('#os-form').addEventListener('submit',function(e){e.preventDefault();lookup($('#os-q').value)});
+$('#hero-os').addEventListener('submit',function(e){e.preventDefault();openOS($('#hero-q').value)});
+$('#os-q').addEventListener('input',function(e){if(/^[\d.\-]+$/.test(e.target.value)&&digits(e.target.value).length>5)e.target.value=maskCpf(e.target.value)});
+$('#hero-q').addEventListener('input',function(e){if(/^[\d.\-]+$/.test(e.target.value)&&digits(e.target.value).length>5)e.target.value=maskCpf(e.target.value)});
+$('#os-q').value='48213';lookup('48213');
+
+/* ====== B. TROCA ====== */
+$('#tr-model').innerHTML=TRADE.map(function(t){return '<option>'+t[0]+'</option>'}).join('');
+$('#tr-model').value='iPhone 13';
+function fillPick(){var sel=$('#tr-pick'),cur=sel.value;
+  sel.innerHTML=USED.map(function(u){return '<option value="'+u.id+'">'+esc(u.name)+' · grade '+esc(u.grade)+' · '+brl(u.price)+'</option>'}).join('');
+  if(USED.some(function(u){return u.id===cur}))sel.value=cur;else if(USED.length)sel.value=USED[0].id}
+fillPick();if(USED.some(function(u){return u.id==='UN-4519'}))$('#tr-pick').value='UN-4519';
+function calcTrade(){
+  var f=new FormData($('#tr-form')),model=f.get('model'),base=0;
+  TRADE.forEach(function(t){if(t[0]===model)base=t[1]});
+  var ios=/iPhone/.test(model);$('#bat-ios').hidden=!ios;$('#bat-and').hidden=ios;
+  var ded=[];
+  var sc={ok:0,sup:.05,crack:.25,dead:.45},sl={sup:'Riscos superficiais na tela',crack:'Tela trincada',dead:'Tela manchada ou sem imagem'};
+  if(sc[f.get('screen')])ded.push([sl[f.get('screen')],sc[f.get('screen')]]);
+  if(!f.get('f_on'))ded.push(['Não liga perfeitamente',.30]);
+  if(!f.get('f_bio'))ded.push(['Biometria ou Face ID com defeito',.08]);
+  if(!f.get('f_cam'))ded.push(['Câmera com defeito',.10]);
+  if(!f.get('f_spk'))ded.push(['Áudio com defeito',.05]);
+  if(ios){var b=+f.get('bat')||0;if(b<70)ded.push(['Bateria abaixo de 70%',.12]);else if(b<80)ded.push(['Bateria entre 70% e 79%',.08]);else if(b<90)ded.push(['Bateria entre 80% e 89%',.03])}
+  else{var a=f.get('auton');if(a==='media')ded.push(['Autonomia regular',.04]);if(a==='ruim')ded.push(['Autonomia ruim',.09])}
+  if(!f.get('a_box'))ded.push(['Sem caixa original',.02]);
+  if(!f.get('a_cab'))ded.push(['Sem cabo e carregador',.02]);
+  if(f.get('maint')==='non')ded.push(['Peças não originais',.08]);
+  var tot=Math.min(.7,ded.reduce(function(s,d){return s+d[1]},0));
+  var cash=r10(base*(1-tot)),credit=r10(cash*1.1);
+  S.trade={model:model,cash:cash,credit:credit,mode:f.get('mode')};
+  var h='<p class="eyebrow">Avaliação máxima</p><p class="price-big" style="margin:6px 0 2px">'+brl(cash)+'</p><p class="small muted">em Pix após validação na bancada</p>'+
+    '<p style="margin-top:10px"><b class="num" style="font-size:1.1rem">'+brl(credit)+'</b> <span class="small muted">em crédito de troca (bônus de 10%)</span></p>';
+  h+='<ul class="kv"><li><span>Valor-base do '+esc(model)+'</span><span>'+brl(base)+'</span></li>'+ded.map(function(d){return '<li><span>'+d[0]+'</span><span>−'+Math.round(d[1]*100)+'%</span></li>'}).join('')+'</ul>';
+  if(!ded.length)h+='<p class="small muted" style="margin-top:10px">Aparelho em ótimo estado, sem descontos.</p>';
+  $('#tr-out').innerHTML=h;
+  var trade=f.get('mode')==='trade';$('#tr-pick-wrap').hidden=!trade;
+  var d='';var u=USED.filter(function(x){return x.id===$('#tr-pick').value})[0];if(trade&&!u)d='<p class="small muted">Nenhum seminovo disponível no momento.</p>';if(trade&&u){var cr=Math.min(credit,u.price);
+    d='<ul class="kv" style="margin:0"><li><span>'+esc(u.name)+'</span><span>'+brl(u.price)+'</span></li><li><span>Seu crédito</span><span>−'+brl(cr)+'</span></li><li><b>Diferença a pagar</b><b>'+brl(u.price-cr)+'</b></li></ul><p class="small muted">No carrinho o Pix ainda dá 5% de desconto sobre essa diferença.</p>'}
+  $('#tr-deal').querySelector('#tr-diff').innerHTML=d;
+}
+$('#tr-form').addEventListener('input',calcTrade);$('#tr-form').addEventListener('change',calcTrade);
+$('#tr-pick').addEventListener('change',calcTrade);
+function tradeInfo(){var f=new FormData($('#tr-form')),sl={ok:'sem riscos',sup:'riscos superficiais',crack:'trincada',dead:'manchada ou sem imagem'},ml={none:'nunca abriu',orig:'peças originais',non:'peças não originais'},al={boa:'dura o dia todo',media:'chega ao fim da tarde',ruim:'precisa carregar várias vezes'};
+  return ['Tela: '+sl[f.get('screen')],'Liga perfeitamente: '+(f.get('f_on')?'sim':'não'),'Biometria ou Face ID: '+(f.get('f_bio')?'ok':'com defeito'),'Câmeras: '+(f.get('f_cam')?'ok':'com defeito'),'Áudio: '+(f.get('f_spk')?'ok':'com defeito'),
+    /iPhone/.test(f.get('model'))?'Bateria: '+f.get('bat')+'%':'Autonomia: '+al[f.get('auton')],'Caixa: '+(f.get('a_box')?'sim':'não')+', carregador: '+(f.get('a_cab')?'sim':'não'),'Manutenção: '+ml[f.get('maint')]]}
+function tradeSend(code,t,u,cr){
+  var L=['*Proposta de '+(u?'troca por seminovo':'venda')+' '+code+'*','Cliente: '+$('#tr-sign').value.trim(),'Aparelho: '+t.model,'IMEI: '+($('#tr-imei').value.trim()||'não informado')].concat(tradeInfo());
+  L.push(u?'Crédito de troca: '+brl(cr)+'. Seminovo: '+u.name+' ('+u.id+') por '+brl(u.price)+'. Diferença: '+brl(u.price-cr):'Avaliação máxima: '+brl(t.cash)+' no Pix');
+  return '<div style="margin-top:10px"><span class="small">Este site não envia a proposta sozinho. Toque no botão para a equipe receber no WhatsApp.</span><br>'+waBtn(L.join('\n'),'Enviar proposta no WhatsApp')+'</div>'}
+function chk(){$('#tr-go').disabled=!($$('#tr-term .req').every(function(c){return c.checked})&&$('#tr-sign').value.trim().length>=3)}
+$('#tr-term').addEventListener('input',chk);$('#tr-term').addEventListener('change',chk);
+$('#tr-term').addEventListener('submit',function(ev){
+  ev.preventDefault();calcTrade();var t=S.trade,code='TR-'+Math.floor(1000+Math.random()*9000),m=$('#tr-msg');
+  if(t.mode==='cash'){
+    m.innerHTML='<div class="msg ok"><b>Proposta <span class="mono">'+code+'</span> registrada.</b> Envie o aparelho por motoboy, Correios ou leve à loja. Depois da validação física, pagamos <b>'+brl(t.cash)+'</b> via Pix. Se a bancada encontrar algo diferente do informado, você recebe uma nova oferta e decide.'+tradeSend(code,t,null)+'</div>';
+  }else{
+    var u=USED.filter(function(x){return x.id===$('#tr-pick').value})[0];
+    if(!u){m.innerHTML='<div class="msg err">Escolha um seminovo disponível.</div>';return}
+    var cr=Math.min(t.credit,u.price);
+    S.cart=S.cart.filter(function(i){return i.type!=='credit'});
+    if(!S.cart.some(function(i){return i.id===u.id}))S.cart.push({id:u.id,name:u.name+' (grade '+u.grade+')',price:u.price,qty:1,type:'used'});
+    S.cart.push({id:'credit-'+code,name:'Crédito de troca '+code+' ('+t.model+')',price:-cr,qty:1,type:'credit',link:u.id});
+    renderCart();
+    m.innerHTML='<div class="msg ok"><b>Proposta <span class="mono">'+code+'</span> registrada.</b> O seminovo e o crédito de '+brl(cr)+' estão no carrinho. O aparelho usado é validado na bancada na entrega. <a href="#carrinho">Ir para o carrinho</a>'+tradeSend(code,t,u,cr)+'</div>';
+  }
+});
+calcTrade();
+
+/* ====== C. CATÁLOGO ====== */
+function renderFilters(){
+  var f=S.filter,types=[];USED.forEach(function(u){if(types.indexOf(u.type)<0)types.push(u.type)});
+  if(f.type!=='todos'&&types.indexOf(f.type)<0)f.type='todos';
+  $('#filters').innerHTML=[['todos','Todos']].concat(types.map(function(t){return [t,TYPE_LABEL[t]||t]})).map(function(x){return '<button class="chip" data-ft="type" data-v="'+x[0]+'" aria-pressed="'+(f.type===x[0])+'">'+x[1]+'</button>'}).join('')+
+    '<span style="width:12px"></span>'+[['todos','Todas as grades'],['A+','A+'],['A','A'],['B','B']].map(function(x){return '<button class="chip" data-ft="grade" data-v="'+x[0]+'" aria-pressed="'+(f.grade===x[0])+'">'+x[1]+'</button>'}).join('');
+}
+function renderProducts(){
+  var f=S.filter,list=USED.filter(function(u){return (f.type==='todos'||u.type===f.type)&&(f.grade==='todos'||u.grade===f.grade)});
+  $('#products').innerHTML=list.length?list.map(function(u){
+    var gc='g-'+(u.grade==='A+'?'Aplus':u.grade),inCart=S.cart.some(function(i){return i.id===u.id});
+    var pic=u.img?'<img src="'+u.img+'" alt="Foto real da unidade '+esc(u.id)+'" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block">':phoneSVG(u.grade,u.type==='tablet')+'<small>Foto da unidade '+esc(u.id)+'</small>';
+    return '<article class="card prod"><div class="pic"'+(u.img?' style="padding:0"':'')+'>'+pic+'</div><div class="body">'+
+      '<div class="row" style="justify-content:space-between"><h3>'+esc(u.name)+'</h3><span class="grade '+gc+'">'+esc(u.grade)+'</span></div>'+
+      '<div><div class="price num">'+brl(u.price*(1-CFG.pix))+' <span class="small muted" style="font-weight:500;font-family:var(--f-body)">no Pix</span></div><div class="small muted num">ou 12x de '+brl(pmt(u.price,12))+' no cartão</div></div>'+
+      '<span class="tag new" style="justify-self:start">GARANTIA '+esc(String(u.war).toUpperCase())+'</span>'+
+      '<details><summary>Ficha técnica</summary><ul><li>Bateria: '+esc(u.bat||'não informada')+'</li><li>Código da unidade: <span class="mono">'+esc(u.id)+'</span></li>'+(u.hist||[]).map(function(x){return '<li>'+esc(x)+'</li>'}).join('')+'<li>Revisado e testado antes de entrar no estoque</li></ul></details>'+
+      '<button class="btn" data-add-used="'+esc(u.id)+'"'+(inCart?' disabled':'')+'>'+(inCart?'No carrinho':'Adicionar ao carrinho')+'</button>'+
+      (S.admin?'<button class="btn warn sm" data-rm-stock="'+esc(u.id)+'">'+(S.rmPending===u.id?'Confirmar remoção':'Remover do estoque')+'</button>':'')+'</div></article>'}).join(''):'<div class="card muted">Nenhum aparelho com esse filtro agora.</div>';
+}
+$('#filters').addEventListener('click',function(e){var b=e.target.closest('[data-ft]');if(!b)return;S.filter[b.dataset.ft]=b.dataset.v;renderFilters();renderProducts()});
+$('#products').addEventListener('click',function(e){var b=e.target.closest('[data-add-used]');if(!b)return;
+  var u=USED.filter(function(x){return x.id===b.dataset.addUsed})[0];
+  if(!S.cart.some(function(i){return i.id===u.id}))S.cart.push({id:u.id,name:u.name+' (grade '+u.grade+')',price:u.price,qty:1,type:'used'});
+  renderCart();renderProducts();toast('Adicionado ao carrinho')});
+/* gerenciador de estoque */
+function shrink(file,cb){var rd=new FileReader();rd.onload=function(){var im=new Image();im.onload=function(){var k=Math.min(1,640/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',0.72))};im.onerror=function(){cb(null)};im.src=rd.result};rd.onerror=function(){cb(null)};rd.readAsDataURL(file)}
+function stockChanged(){renderFilters();renderProducts();fillPick();calcTrade();renderCart()}
+$('#adm-toggle').addEventListener('click',function(){S.admin=!S.admin;S.rmPending=null;$('#adm').hidden=!S.admin;this.setAttribute('aria-expanded',String(S.admin));this.textContent=S.admin?'Fechar gerenciamento':'Gerenciar estoque';renderProducts()});
+$('#products').addEventListener('click',function(e){var b=e.target.closest('[data-rm-stock]');if(!b)return;var id=b.dataset.rmStock;
+  if(S.rmPending!==id){S.rmPending=id;renderProducts();return}
+  USED=USED.filter(function(u){return u.id!==id});S.cart=S.cart.filter(function(i){return i.id!==id});S.rmPending=null;
+  saveStock();stockChanged();toast('Aparelho removido do estoque')});
+$('#adm').addEventListener('submit',function(ev){
+  ev.preventDefault();var m=$('#adm-msg');
+  var name=$('#a-name').value.trim(),price=parseFloat($('#a-price').value);
+  if(name.length<3){m.innerHTML='<div class="msg err">Informe o nome do aparelho.</div>';return}
+  if(!(price>0)){m.innerHTML='<div class="msg err">Informe um preço maior que zero.</div>';return}
+  var id;do{id='UN-'+(1000+Math.floor(Math.random()*9000))}while(USED.some(function(u){return u.id===id}));
+  var item={id:id,name:name,type:$('#a-type').value,grade:$('#a-grade').value,price:Math.round(price*100)/100,bat:$('#a-bat').value.trim(),
+    hist:$('#a-hist').value.split(';').map(function(x){return x.trim()}).filter(Boolean),war:$('#a-war').value};
+  function done(img){
+    if(img)item.img=img;USED.unshift(item);
+    var ok=saveStock();stockChanged();$('#adm').reset();
+    m.innerHTML=ok?'<div class="msg ok"><b>'+esc(name)+'</b> entrou no catálogo com o código <span class="mono">'+id+'</span>.</div>':'<div class="msg warn">O aparelho entrou no catálogo, mas o navegador não conseguiu salvar. Ele some ao recarregar a página.</div>';
+  }
+  var file=$('#a-photo').files[0];
+  if(file)shrink(file,function(img){if(!img)m.innerHTML='<div class="msg warn">Não consegui ler a foto. Adicionando sem foto.</div>';done(img)});else done(null);
+});
+$('#adm-reset').addEventListener('click',function(){USED=SEED.slice();saveStock();S.rmPending=null;stockChanged();$('#adm-msg').innerHTML='<div class="msg info">Estoque de exemplo restaurado.</div>'});
+
+/* ====== CHECKOUT ====== */
+function unit(i){return i.price}
+function renderCart(){
+  S.cart=S.cart.filter(function(i){return i.type!=='credit'||S.cart.some(function(x){return x.id===i.link})});
+  var n=S.cart.filter(function(i){return i.type!=='credit'}).reduce(function(s,i){return s+i.qty},0);
+  $('#cart-count').textContent=n;
+  var body=$('#cart-body');
+  if(!S.cart.length){body.innerHTML='<h3>Seu carrinho está vazio</h3><p class="muted" style="margin-top:6px">Escolha um <a href="#seminovos">seminovo</a> ou simule uma <a href="#troca">troca</a>.</p>'}
+  else body.innerHTML='<h3 style="margin-bottom:8px">Itens</h3>'+S.cart.map(function(i){
+    var q='<span></span>';
+    return '<div class="cart-row"><div><b>'+esc(i.name)+'</b>'+'</div>'+q+'<div style="text-align:right"><b class="num">'+brl(unit(i)*i.qty)+'</b><br><button class="chip" style="padding:2px 8px;font-size:.75rem;margin-top:4px" data-rm="'+i.id+'">Remover</button></div></div>'}).join('');
+  renderSummary();
+}
+$('#cart-body').addEventListener('click',function(e){
+  var rm=e.target.closest('[data-rm]'),q=e.target.closest('[data-q]');
+  if(rm){S.cart=S.cart.filter(function(i){return i.id!==rm.dataset.rm});renderCart();renderProducts()}
+  if(q){var it=S.cart.filter(function(i){return i.id===q.dataset.id})[0];it.qty=Math.max(1,it.qty+parseInt(q.dataset.q,10));renderCart()}
+});
+function shipOptions(cep){
+  var c=digits(cep);if(c.length!==8)return null;
+  var reg=[1,1.1,1.25,1.3,1.45,1.5,1.7,1.5,1.2,1.35][+c[0]],opts=[];
+  if(isLocal(c)){var km=estKm(c),f=motoFare(km);opts.push({id:'moto',label:'Motoboy, entrega hoje',sub:'Cerca de '+String(km).replace('.',',')+' km e '+f.min+' min'+(f.peak?' · tarifa de horário de pico':'')+'. Pedidos aprovados até as 16h',price:f.price})}
+  opts.push({id:'loja',label:'Retirar na loja',sub:'Rua Benjamim Baptista Cerezoli, Ribeirão Pires. Atendimento das 8h às 18h',price:0});
+  opts.push({id:'pac',label:'Correios PAC',sub:'Prazo de '+Math.round(4+reg*2)+' a '+Math.round(6+reg*2)+' dias úteis',price:Math.round(24.9*reg*100)/100});
+  opts.push({id:'sedex',label:'Correios SEDEX',sub:'Prazo de '+Math.max(1,Math.round(reg))+' a '+Math.round(2+reg*1.5)+' dias úteis',price:Math.round(41.9*reg*100)/100});
+  return opts;
+}
+var SHIP=[];
+$('#co-calc').addEventListener('click',function(){
+  var o=shipOptions($('#co-cep').value),box=$('#ship-opts');
+  if(!o){box.innerHTML='<div class="msg err">Digite um CEP com 8 números.</div>';return}
+  SHIP=o;S.ship=null;
+  box.innerHTML=o.map(function(x,i){return '<label class="opt"><input type="radio" name="ship" value="'+x.id+'"><span><b>'+x.label+' · '+(x.price?brl(x.price):'Grátis')+'</b><span class="muted small">'+x.sub+'</span></span></label>'}).join('')+'<p class="small muted">O motoboy é calculado por distância e tempo, como nos apps de corrida. A distância é uma estimativa pelo CEP e o valor dos Correios é de exemplo. Em produção, vêm de uma API de rotas e dos Correios em tempo real.</p>';
+  renderSummary();
+});
+$('#ship-opts').addEventListener('change',function(e){if(e.target.name==='ship'){S.ship=SHIP.filter(function(x){return x.id===e.target.value})[0];renderSummary()}});
+$$('input[name=pay]').forEach(function(i){i.addEventListener('change',function(){S.pay=i.value;renderSummary()})});
+function totals(){
+  var sub=S.cart.reduce(function(s,i){return s+unit(i)*i.qty},0);sub=Math.max(0,sub);
+  var disc=S.pay==='pix'?sub*CFG.pix:0,ship=S.ship?S.ship.price:0;
+  return {sub:sub,disc:disc,ship:ship,total:sub-disc+ship};
+}
+function renderSummary(){
+  var t=totals(),box=$('#summary');
+  var h='<h3 style="margin-bottom:10px">Resumo</h3><div class="tot"><span>Produtos</span><span class="num">'+brl(t.sub)+'</span></div>';
+  if(S.pay==='pix')h+='<div class="tot" style="color:var(--good)"><span>Desconto Pix (5%)</span><span class="num">−'+brl(t.disc)+'</span></div>';
+  h+='<div class="tot"><span>Frete'+(S.ship?' · '+S.ship.label:'')+'</span><span class="num">'+(S.ship?(S.ship.price?brl(S.ship.price):'Grátis'):'Calcule acima')+'</span></div>';
+  h+='<div class="tot big"><span>Total</span><span class="num">'+brl(t.total)+'</span></div>';
+  if(S.pay==='card'&&t.total>0)h+='<p class="small muted">ou 12x de '+brl(pmt(t.total,12))+' com juros</p>';
+  h+='<button class="btn" style="width:100%;margin-top:14px" id="co-go"'+(S.cart.length?'':' disabled')+'>Finalizar pedido</button><div id="co-msg" aria-live="polite" style="margin-top:12px"></div>';
+  box.innerHTML=h;
+  var ins=$('#inst');
+  if(S.pay!=='card'){ins.innerHTML='<p class="small muted">Pagando com Pix o desconto já entra no total.</p>';}
+  else{var base=t.total>0?t.total:2000,rows='';
+    for(var n=1;n<=12;n++){var p=pmt(base,n),tt=p*n;rows+='<tr><td>'+n+'x</td><td>'+brl(p)+'</td><td>'+(n<=CFG.semJuros?'sem juros':(CFG.jurosMes*100).toFixed(2).replace('.',',')+'% ao mês')+'</td><td>'+brl(tt)+'</td></tr>'}
+    var sel='';for(var k=1;k<=12;k++)sel+='<option value="'+k+'"'+(S.n===k?' selected':'')+'>'+k+'x de '+brl(pmt(base,k))+(k<=CFG.semJuros?' sem juros':'')+'</option>';
+    ins.innerHTML='<label class="lbl" style="max-width:340px;margin-bottom:12px">Parcelas<select id="co-n">'+sel+'</select></label><p class="small muted" style="margin-bottom:8px">Simulação sobre '+(t.total>0?'o total do carrinho':'um exemplo de R$ 2.000,00')+'. As taxas aparecem antes de você pagar.</p><div class="scroll-x"><table><thead><tr><th>Parcelas</th><th>Valor</th><th>Juros</th><th>Total</th></tr></thead><tbody>'+rows+'</tbody></table></div>'}
+}
+$('#inst').addEventListener('change',function(e){if(e.target.id==='co-n')S.n=+e.target.value});
+$('#summary').addEventListener('click',function(e){
+  if(e.target.id!=='co-go')return;var m=$('#co-msg');
+  if(!S.ship){m.innerHTML='<div class="msg err">Calcule o frete e escolha uma opção de entrega.</div>';return}
+  var t=totals(),no='PD-'+Math.floor(10000+Math.random()*89999);
+  var L=['*Novo pedido '+no+'*'].concat(S.cart.map(function(i){return '• '+i.name+': '+brl(unit(i)*i.qty)}));
+  L.push('Produtos: '+brl(t.sub));if(S.pay==='pix')L.push('Desconto Pix (5%): −'+brl(t.disc));
+  L.push('Entrega: '+S.ship.label+' ('+(S.ship.price?brl(S.ship.price):'grátis')+'), CEP '+$('#co-cep').value);
+  L.push('Total: '+brl(t.total));L.push('Pagamento: '+(S.pay==='pix'?'Pix':S.n+'x de '+brl(pmt(t.total,S.n))+' no cartão'));
+  m.innerHTML='<div class="msg ok"><b>Pedido <span class="mono">'+no+'</span> pronto.</b> Total de '+brl(t.total)+'. Este site ainda não cobra nem envia o pedido sozinho. Toque no botão para a Socram Tech receber o pedido no WhatsApp e combinar o pagamento.<br>'+waBtn(L.join('\n'),'Enviar pedido no WhatsApp')+'</div>';
+});
+
+/* ====== D. MENSAGENS E CHATBOT ====== */
+$('#templates').innerHTML=MSGS.map(function(m,i){return '<div><span class="small muted">'+STAGES[i]+'</span><div class="bubble" style="max-width:none">'+esc(m)+'</div></div>'}).join('');
+var FAQ={
+  'Quanto tempo leva?':'Troca de tela e bateria costumam ficar prontas em 1 a 2 horas. Reparos de placa e danos por água levam de 2 a 5 dias úteis.',
+  'Tem garantia?':'Serviços têm 90 dias de garantia. Seminovos têm de 90 dias a 6 meses, conforme a ficha de cada aparelho.',
+  'Formas de pagamento':'Pix com 5% de desconto ou cartão em até 12x, sendo até 3x sem juros. As taxas aparecem na simulação.',
+  'Como acompanho minha OS?':'Digite seu CPF ou o número da OS no portal. Você também recebe cada etapa no WhatsApp.',
+  'Como funciona a troca?':'Você responde um questionário rápido, vê o valor máximo e escolhe Pix ou entrada num seminovo. O valor final é confirmado na bancada.'
+};
+function bot(t){var l=$('#chat-log');l.insertAdjacentHTML('beforeend','<div class="bot">'+t+'</div>');l.scrollTop=l.scrollHeight}
+function me(t){var l=$('#chat-log');l.insertAdjacentHTML('beforeend','<div class="me">'+esc(t)+'</div>');l.scrollTop=l.scrollHeight}
+$('#chat-faq').innerHTML=Object.keys(FAQ).map(function(k){return '<button class="chip" data-faq="'+esc(k)+'">'+esc(k)+'</button>'}).join('')+'<button class="chip" data-faq="__wa" style="border-color:var(--accent)">Falar com a equipe</button>';
+bot('Oi! Tire uma dúvida rápida ou fale com a equipe técnica pelo WhatsApp.');
+$('#chat-faq').addEventListener('click',function(e){var b=e.target.closest('[data-faq]');if(!b)return;var k=b.dataset.faq;
+  if(k==='__wa'){var nm=$('#c-name').value.trim();
+    me('Falar com a equipe');
+    bot('Abri o WhatsApp com os dados do seu orçamento já preenchidos. <a target="_blank" rel="noopener" href="'+waLink('Olá! '+(nm?'Sou '+nm+'. ':'')+'Preciso de ajuda com: '+(modelName()?(brandName()+' '+modelName()+' ('+catName()+')'):'meu aparelho')+(defName()?', defeito: '+defName():'')+'.')+'">Abrir conversa</a>')}
+  else{me(k);bot(esc(FAQ[k]))}});
+$('#chat-fab').addEventListener('click',function(){var c=$('#chat');c.hidden=!c.hidden;this.setAttribute('aria-expanded',String(!c.hidden))});
+$('#chat-x').addEventListener('click',function(){$('#chat').hidden=true;$('#chat-fab').setAttribute('aria-expanded','false')});
+
+renderSim();renderFilters();renderProducts();renderCart();
+})();
+</script>
+
+</body></html>
